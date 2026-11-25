@@ -195,31 +195,34 @@ ul{margin:0;padding:0;list-style:none}
 /* a camada da galeria, acima de tudo (barra 50, dock 45, topo 40, grão 35) */
 .gal{position:fixed;inset:0;z-index:60;background:#000;display:none}
 .gal.on{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
-.gal__top{display:flex;align-items:center;gap:12px;touch-action:none;
+.gal__top{display:flex;align-items:center;gap:12px;touch-action:pan-x pinch-zoom;
   padding:calc(12px + env(safe-area-inset-top,0px)) var(--gut-r) 12px var(--gut)}
 .gal__tit{flex:1;min-width:0;font-family:var(--display);font-size:1.05rem;font-weight:400;
   letter-spacing:-.01em;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gal__cont{flex:0 0 auto;font:600 11px/1 var(--body);letter-spacing:.06em;
   color:var(--gold-soft);font-variant-numeric:tabular-nums}
-.gal__x{flex:0 0 auto;width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;
+.gal__x{flex:0 0 auto;width:44px;height:44px;display:grid;place-items:center;border:0;padding:0;
   background:rgba(244,241,234,.1);border-radius:50%;color:var(--cream);cursor:pointer}
 .gal__x svg{width:17px;height:17px}
 .gal__x:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 /* A trilha é scroll nativo com encaixe: o arrastar herda a inércia do sistema
    e não custa uma linha de carrossel em JS. `pan-x` impede que um arrasto
-   vertical aqui dentro role a página atrás. */
+   vertical aqui dentro role a página atrás; `pinch-zoom` junto porque sem ele
+   o navegador bloqueia a pinça — e quem compra imóvel quer chegar perto do
+   acabamento. O mesmo par vale no topo e no pé: o que se quer barrar ali é
+   só o arrasto vertical. */
 .gal__trilha{display:flex;min-height:0;overflow-x:auto;overflow-y:hidden;
-  scroll-snap-type:x mandatory;overscroll-behavior:contain;touch-action:pan-x;
+  scroll-snap-type:x mandatory;overscroll-behavior:contain;touch-action:pan-x pinch-zoom;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .gal__trilha::-webkit-scrollbar{display:none}
 /* Sem recuo lateral: a foto é limitada pela largura da tela, então cada
    pixel de margem aqui vira foto menor e preto a mais em cima e embaixo.
    Título e legenda ficam com a calha; a foto sangra. */
-.gal__slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;
+.gal__slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;scroll-snap-stop:always;
   display:grid;place-items:center;padding:0}
 .gal__slide img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
-.gal__pe{touch-action:none;padding:12px var(--gut-r) calc(14px + env(safe-area-inset-bottom,0px)) var(--gut)}
+.gal__pe{touch-action:pan-x pinch-zoom;padding:12px var(--gut-r) calc(14px + env(safe-area-inset-bottom,0px)) var(--gut)}
 .gal__pontos{display:flex;gap:6px;justify-content:center;margin-bottom:11px}
 .gal__pontos i{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
 .gal__pontos i.on{background:var(--gold)}
@@ -1002,8 +1005,9 @@ var CASAS = [
           '<span class="gal__cont"></span>' +
           '<button class="gal__x" type="button">' + ICONE_X + '</button>' +
         '</div>' +
-        '<div class="gal__trilha" tabindex="0"></div>' +
-        '<div class="gal__pe"><div class="gal__pontos"></div><p class="gal__leg"></p></div>';
+        '<div class="gal__trilha" tabindex="0" role="group"></div>' +
+        '<div class="gal__pe"><div class="gal__pontos" aria-hidden="true"></div>' +
+          '<p class="gal__leg" aria-live="polite"></p></div>';
       document.body.appendChild(gal);
 
       trilha   = gal.querySelector(".gal__trilha");
@@ -1076,7 +1080,13 @@ var CASAS = [
       fotos = g.fotos;
       voltarPara = cartao;
       atual = -1;
+      var es = lang() === "es";
       elTit.textContent = g[lang()] || g.pt;
+      /* O SVG do X é aria-hidden, então sem isto o leitor de tela anuncia só
+         "botão" no único jeito de sair do diálogo. Escrito aqui, e não por
+         data-es-aria, porque o setLang já rodou quando a camada nasce. */
+      btnX.setAttribute("aria-label", es ? "Cerrar" : "Fechar");
+      trilha.setAttribute("aria-label", "Fotos de " + (g[lang()] || g.pt));
 
       if (olho){ olho.disconnect(); olho = null; }
       trilha.innerHTML = "";
@@ -1086,12 +1096,16 @@ var CASAS = [
         sl.className = "gal__slide";
         sl.setAttribute("data-i", i);
         var im = document.createElement("img");
-        im.src = "img/" + fotos[i].f;
-        im.alt = fotos[i][lang()] || fotos[i].pt;
-        /* as duas primeiras já; o resto quando chegar perto, para não
-           baixar quatro fotos de uma vez num 4G */
+        /* `loading` ANTES de `src`: depois, a carga já foi disparada e o
+           lazy pode não valer. Dito isso, o lazy aqui rende pouco — o
+           limiar do Chrome é de ~1250 px e num celular o quarto slide está
+           a ~1170 px, dentro dele. Na prática a galeria baixa suas fotos
+           quase todas de uma vez (~430 KB no pior caso), e tudo bem: só
+           acontece quando alguém toca no card de propósito. */
         im.loading = (i < 2) ? "eager" : "lazy";
         im.decoding = "async";
+        im.src = "img/" + fotos[i].f;
+        im.alt = fotos[i][lang()] || fotos[i].pt;
         sl.appendChild(im);
         trilha.appendChild(sl);
         elPontos.appendChild(document.createElement("i"));
@@ -1143,6 +1157,7 @@ var CASAS = [
 
         var selo = document.createElement("span");
         selo.className = "area__n";
+        selo.setAttribute("aria-hidden", "true");   /* o botão ao lado já diz quantas são */
         selo.innerHTML = ICONE_FOTO + "<b>" + g.fotos.length + "</b>";
         var moldura = cartao.querySelector(".area__img");
         if (moldura) moldura.appendChild(selo);
@@ -1152,6 +1167,16 @@ var CASAS = [
         b.type = "button";
         b.setAttribute("aria-label", "Ver " + g.fotos.length + " fotos de " + g.pt);
         b.setAttribute("data-es-aria", "Ver " + g.fotos.length + " fotos de " + g.es);
+        /* Começa a baixar a primeira foto já no toque, antes do clique.
+           Importa sobretudo em Natureza: é a única galeria cuja primeira
+           foto não é a capa do card, então é a única que não está em cache
+           e abriria num retângulo preto no 4G. */
+        var puxou = false;
+        b.addEventListener("pointerdown", function(){
+          if (puxou) return;
+          puxou = true;
+          new Image().src = "img/" + g.fotos[0].f;
+        }, {passive:true});
         b.addEventListener("click", function(){ abrir(chave, b); });
         cartao.appendChild(b);
       })(cartoes[c]);
