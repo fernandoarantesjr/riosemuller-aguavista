@@ -1,0 +1,9 @@
+# Ferramentas locais da sessão — guardam caminhos absolutos desta máquina
+.claude/
+
+# macOS
+.DS_Store
+
+# Páginas do YouTube baixadas só para ler a descrição dos vídeos:
+# 1,3 MB cada e com identificadores de visitante dentro
+_originais/yt/*.html

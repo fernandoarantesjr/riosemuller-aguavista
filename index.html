@@ -1,0 +1,1439 @@
+<title>Rios &amp; Muller</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=Inter:wght@300;400;500;600&display=swap">
+
+<style>
+/* Layout: apresentação vertical paginada — abre em vídeo de tela cheia e cada
+   capítulo entra no scroll. Preto e dourado, tema único e deliberado: a sala
+   fica escura para a foto e o vídeo serem a única cor da tela. */
+:root{
+  --ink:#0B0B0C;          /* preto, o fundo de tudo */
+  --ink-2:#151516;        /* bloco elevado */
+  --ink-3:#282827;        /* hairline/borda */
+  --cream:#F4F1EA;        /* texto principal */
+  --cream-dim:#9B9790;    /* texto secundário, cinza quente */
+  --gold:#E8B73F;         /* acento único */
+  --gold-soft:#F5D98F;
+
+  --display:"Fraunces","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --body:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+
+  --gut:max(20px,env(safe-area-inset-left,0px));
+  --gut-r:max(20px,env(safe-area-inset-right,0px));
+
+  /* 0 no topo da página, 1 quando o hero já saiu — o JS escreve a cada quadro.
+     Fica em 0 se o JS não rodar ou se a pessoa pediu menos movimento. */
+  --heroP:0;
+
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ink);
+  color:var(--cream);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,video{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0;letter-spacing:-.01em}
+p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+/* ---------- barra superior fixa ---------- */
+.topbar{
+  position:fixed;inset:0 0 auto;z-index:40;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) var(--gut-r) 10px var(--gut);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:rgba(11,11,12,.94);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  /* sobre o vídeo não existe: entra quando o primeiro capítulo chega */
+  opacity:0;pointer-events:none;transform:translateY(-100%);
+  transition:opacity .35s ease,transform .35s cubic-bezier(.2,.7,.3,1);
+}
+.topbar.solid{opacity:1;pointer-events:auto;transform:none}
+.topbar__mark{font:600 12.5px/1 var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--cream);text-decoration:none;opacity:.92}
+.lang{display:flex;gap:1px;background:var(--ink-3);border-radius:999px;padding:2px;border:1px solid rgba(214,169,74,.28)}
+.lang button{
+  font:600 11px/1 var(--body);letter-spacing:.08em;
+  background:none;border:0;color:var(--cream-dim);
+  padding:7px 11px;border-radius:999px;cursor:pointer;
+}
+.lang button[aria-pressed=true]{background:var(--gold);color:#171103}
+#progress{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:50;transition:width .1s linear}
+
+/* ---------- hero ---------- */
+/* Tela cheia, descontando o que o :root já reserva para as barras do celular.
+   O hero não rola embora: ele fica grudado no topo e o primeiro capítulo
+   desliza POR CIMA dele, como uma folha deslizando sobre uma fotografia.
+   Por isso ele vive na camada 0 e todo o resto da página na camada 1. */
+.hero{position:sticky;top:0;z-index:0;overflow:hidden;
+  min-height:calc(100svh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+/* já saiu de vista: para de pintar e o vídeo é pausado pelo JS */
+.hero.gone{visibility:hidden}
+/* marca da Rios & Muller em tipo — não há arquivo de logo */
+.hero__media{position:absolute;inset:0;transform-origin:50% 42%;overflow:hidden;
+  transform:scale(calc(1 - .12 * var(--heroP)));
+  border-radius:calc(14px * var(--heroP));
+  animation:fadein .9s ease both}
+.hero__media video,.hero__media img{width:100%;height:100%;object-fit:cover}
+/* O vídeo recua para o preto enquanto a página sobe por cima. Entra como
+   ÚLTIMO filho do hero e acima do botão de som, para escurecer tudo junto —
+   com pointer-events:none, o botão continua clicável por baixo. */
+.hero__dim{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:var(--ink);opacity:calc(.72 * var(--heroP))}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+/* véu só nos 18% de baixo, para o vídeo encostar no preto da página */
+.hero__veil{position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(to bottom,rgba(0,0,0,0) 82%,rgba(0,0,0,.55) 93%,var(--ink) 100%)}
+.kicker{font:500 11px/1.4 var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft)}
+.chap__logo{width:104px;margin-bottom:18px;opacity:.95}
+/* Seta de scroll: só o traço, sem palavra — o vídeo é a tela inteira.
+   A âncora só centraliza e entra em fade; quem pulsa é o desenho dentro
+   dela, senão as duas animações disputariam o mesmo transform. */
+.hero__cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+  width:34px;height:34px;display:grid;place-items:center;color:var(--gold);
+  text-decoration:none;opacity:calc(1 - var(--heroP));
+  animation:softin .8s ease 1.3s backwards}
+.hero__cue svg{width:22px;height:22px;animation:cue 2.4s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
+@keyframes softin{from{opacity:0}to{opacity:1}}
+/* `backwards` em vez de `both`: terminada a entrada, a animação solta a
+   opacidade e quem manda passa a ser o calc — a seta e o botão somem junto
+   com o vídeo quando a página sobe por cima. */
+.sound{opacity:calc(1 - var(--heroP));animation:softin .8s ease 1.1s backwards;
+  position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:var(--gut-r);
+  width:40px;height:40px;border-radius:50%;cursor:pointer;z-index:2;
+  background:rgba(0,0,0,.4);border:1px solid rgba(244,241,234,.28);
+  color:var(--cream);display:grid;place-items:center;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.sound svg{width:19px;height:19px}
+
+/* ---------- estrutura de capítulo ---------- */
+/* A camada que desliza por cima do hero. O fundo opaco é obrigatório: sem ele
+   o vídeo aparece por trás do texto. Pelo mesmo motivo nenhuma seção pode ter
+   margem entre uma e outra — a fresta mostraria o vídeo. */
+.chap,.close,footer{position:relative;z-index:1;background:var(--ink)}
+.chap{padding-block:64px}
+.wrap{padding-left:var(--gut);padding-right:var(--gut-r);max-width:620px;margin-inline:auto}
+/* numeral grande em serifa: assinatura de dossiê numerado, não de menu */
+.chap__no{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.chap__no b{font-family:var(--display);font-size:1.75rem;font-weight:300;line-height:1;
+  letter-spacing:-.02em;color:var(--gold);font-variant-numeric:tabular-nums}
+.chap__no i{flex:1;height:1px;background:linear-gradient(to right,rgba(232,183,63,.55),var(--ink-3));font-style:normal}
+.chap__no s{font:500 11px/1 var(--body);letter-spacing:.18em;color:var(--cream-dim);text-decoration:none;font-variant-numeric:tabular-nums}
+.chap h2{font-size:clamp(1.9rem,8vw,2.6rem);line-height:1.04;font-weight:300;margin-bottom:16px;letter-spacing:-.025em}
+.chap h2 em{font-style:italic;color:var(--gold-soft)}
+.lead{color:var(--cream-dim);font-size:1.02rem;max-width:62ch}
+.lead + .lead{margin-top:14px}
+
+/* Foto sangrada de abertura. O `margin:30px 0` tem que zerar as laterais na
+   marra: <figure> vem do navegador com `margin:1em 40px`, e um margin-block
+   sozinho não apaga isso — a foto ficava 40 px para dentro, mais estreita que
+   o texto ao lado dela, e a legenda saía desalinhada do corpo da página. */
+.plate{position:relative;margin:30px 0;aspect-ratio:4/5;max-width:100%;overflow:hidden}
+.plate.wide{aspect-ratio:3/2}
+.plate img{width:100%;height:100%;object-fit:cover}
+
+/* Camada de parallax. A foto anda mais devagar que a página (±18 px), o que
+   faz a imagem parecer impressa e não colada. Mora num elemento SÓ dela:
+   a revelação já anima o transform da <img>, e as duas brigariam no mesmo
+   elemento. A sobra de 24 px em cima e embaixo é o que impede a foto de
+   abrir uma fresta ao deslocar. */
+.par{position:absolute;inset:-24px 0}
+.par img{width:100%;height:100%;object-fit:cover}
+.plate figcaption{
+  position:absolute;left:var(--gut);right:var(--gut-r);bottom:18px;
+  font:500 11px/1.5 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--cream);
+  text-shadow:0 1px 12px rgba(0,0,0,.8);
+}
+.plate::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,0) 45%)}
+.plate figcaption{z-index:1}
+
+/* ---------- números ---------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ink-3);border:1px solid var(--ink-3);margin-top:30px}
+.stat{background:var(--ink);padding:20px 16px}
+.stat b{display:block;font-family:var(--display);font-size:2.1rem;font-weight:300;color:var(--gold-soft);line-height:1;font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:7px;font-size:12px;line-height:1.4;color:var(--cream-dim);letter-spacing:.02em}
+
+/* ---------- áreas ---------- */
+.areas{display:grid;gap:14px;margin-top:28px}
+.area{background:var(--ink-2);border:1px solid var(--ink-3);overflow:hidden}
+.area__img{aspect-ratio:16/10;max-width:100%;overflow:hidden;position:relative}
+.area__img img{width:100%;height:100%;object-fit:cover}
+.area__body{padding:17px 18px 19px}
+.area__body h3{font-size:1.32rem;font-weight:400;margin-bottom:7px}
+/* régua dourada curta acima do título do card — detalhe de ficha impressa */
+.area__body h3::before,.casa__body h3::before{content:"";display:block;
+  width:26px;height:1px;background:var(--gold);opacity:.8;margin-bottom:12px}
+.area__body p{color:var(--cream-dim);font-size:.93rem;line-height:1.55}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+.tags li{font:500 10.5px/1 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--gold-soft);border:1px solid rgba(214,169,74,.3);padding:6px 9px;border-radius:999px}
+
+/* ---------- galeria da área ---------- */
+/* O card inteiro vira alvo de toque. O botão COBRE o card em vez de envolvê-lo:
+   envolver mudaria o elemento que o IntersectionObserver observa, e o
+   clip-path da revelação tem que continuar num filho, nunca no observado. */
+.area{position:relative}
+.area__btn{position:absolute;inset:0;z-index:2;width:100%;border:0;padding:0;
+  background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.area__btn:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
+/* o selinho de quantas fotos, no mesmo desenho do selo de duração das casas */
+.area__n{position:absolute;right:9px;bottom:9px;z-index:1;display:flex;align-items:center;gap:5px;
+  font:600 11px/1 var(--body);letter-spacing:.06em;font-variant-numeric:tabular-nums;
+  color:var(--cream);background:rgba(0,0,0,.72);padding:5px 7px;border-radius:3px}
+.area__n svg{width:12px;height:12px;flex:0 0 auto}
+
+/* a camada da galeria, acima de tudo (barra 50, dock 45, topo 40, grão 35) */
+.gal{position:fixed;inset:0;z-index:60;background:#000;display:none}
+.gal.on{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.gal__top{display:flex;align-items:center;gap:12px;touch-action:none;
+  padding:calc(12px + env(safe-area-inset-top,0px)) var(--gut-r) 12px var(--gut)}
+.gal__tit{flex:1;min-width:0;font-family:var(--display);font-size:1.05rem;font-weight:400;
+  letter-spacing:-.01em;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal__cont{flex:0 0 auto;font:600 11px/1 var(--body);letter-spacing:.06em;
+  color:var(--gold-soft);font-variant-numeric:tabular-nums}
+.gal__x{flex:0 0 auto;width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;
+  background:rgba(244,241,234,.1);border-radius:50%;color:var(--cream);cursor:pointer}
+.gal__x svg{width:17px;height:17px}
+.gal__x:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* A trilha é scroll nativo com encaixe: o arrastar herda a inércia do sistema
+   e não custa uma linha de carrossel em JS. `pan-x` impede que um arrasto
+   vertical aqui dentro role a página atrás. */
+.gal__trilha{display:flex;min-height:0;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;overscroll-behavior:contain;touch-action:pan-x;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.gal__trilha::-webkit-scrollbar{display:none}
+/* Sem recuo lateral: a foto é limitada pela largura da tela, então cada
+   pixel de margem aqui vira foto menor e preto a mais em cima e embaixo.
+   Título e legenda ficam com a calha; a foto sangra. */
+.gal__slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;
+  display:grid;place-items:center;padding:0}
+.gal__slide img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.gal__pe{touch-action:none;padding:12px var(--gut-r) calc(14px + env(safe-area-inset-bottom,0px)) var(--gut)}
+.gal__pontos{display:flex;gap:6px;justify-content:center;margin-bottom:11px}
+.gal__pontos i{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+.gal__pontos i.on{background:var(--gold)}
+.gal__leg{min-height:2.9em;color:var(--cream-dim);font-size:.9rem;line-height:1.5;text-align:center}
+/* enquanto a galeria está aberta o fundo não rola. O overflow do body é
+   propagado para a viewport (ele já tem overflow-x:hidden), então o body
+   não vira contêiner de rolagem e o hero sticky não muda de referência. */
+body.gal-aberta{overflow:hidden}
+
+/* ---------- specs (aeroporto) ---------- */
+.specs{display:grid;gap:1px;background:var(--ink-3);border:1px solid var(--ink-3);margin-top:26px}
+.spec{background:var(--ink);padding:16px 17px;display:flex;align-items:baseline;gap:14px}
+.spec b{font-family:var(--display);font-size:1.15rem;font-weight:400;color:var(--gold-soft);flex:0 0 auto;min-width:92px;font-variant-numeric:tabular-nums}
+.spec span{color:var(--cream-dim);font-size:.93rem;min-width:0}
+
+/* ---------- filme dentro do capítulo ---------- */
+.filme{position:relative;margin-block:30px;aspect-ratio:4/5;max-width:100%;overflow:hidden;background:var(--ink-2)}
+.filme video{width:100%;height:100%;object-fit:cover}
+.filme__btn{position:absolute;inset:0;width:100%;border:0;padding:0;cursor:pointer;color:var(--cream);
+  background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,.1) 55%);display:grid;place-items:center}
+.filme__btn i{width:62px;height:62px;border-radius:50%;background:rgba(243,239,228,.95);display:grid;place-items:center}
+.filme__btn i::after{content:"";width:0;height:0;border-left:18px solid var(--ink);border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+.filme__btn span{position:absolute;left:var(--gut);right:var(--gut-r);bottom:18px;
+  font:500 11px/1.5 var(--body);letter-spacing:.14em;text-transform:uppercase;text-align:center}
+
+/* ---------- casas ---------- */
+.casas{display:grid;gap:14px;margin-top:28px}
+.casa{display:block;text-decoration:none;background:var(--ink-2);border:1px solid var(--ink-3);overflow:hidden}
+.casa__img{position:relative;aspect-ratio:16/9;background:var(--ink-3);overflow:hidden}
+.casa__img img{width:100%;height:100%;object-fit:cover}
+.casa__play{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.3)}
+.casa__play i{width:58px;height:58px;border-radius:50%;background:rgba(243,239,228,.94);display:grid;place-items:center}
+.casa__play i::after{content:"";width:0;height:0;border-left:16px solid var(--ink);border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+.casa__dur{position:absolute;right:9px;bottom:9px;
+  font:600 11px/1 var(--body);letter-spacing:.06em;font-variant-numeric:tabular-nums;
+  color:var(--cream);background:rgba(0,0,0,.72);padding:5px 7px;border-radius:3px}
+.casa__body{padding:15px 17px 17px}
+.casa__body h3{font-size:1.15rem;margin-bottom:5px}
+.casa__body p{color:var(--cream-dim);font-size:.88rem}
+.soon{border:1px dashed var(--ink-3);padding:28px 20px;text-align:center;margin-top:26px;background:var(--ink-2)}
+.soon b{display:block;font-family:var(--display);font-size:1.3rem;font-weight:400;color:var(--gold-soft);margin-bottom:8px}
+.soon p{color:var(--cream-dim);font-size:.93rem;max-width:36ch;margin-inline:auto}
+
+/* ---------- passos ---------- */
+.steps{display:grid;gap:1px;background:var(--ink-3);border:1px solid var(--ink-3);margin-top:26px}
+.step{background:var(--ink);padding:17px;display:flex;gap:14px}
+.step b{font:500 11px/1.6 var(--body);letter-spacing:.14em;color:var(--gold);flex:0 0 auto;font-variant-numeric:tabular-nums}
+.step div{min-width:0}
+.step h3{font-size:1.05rem;font-family:var(--body);font-weight:600;letter-spacing:0;margin-bottom:3px}
+.step p{color:var(--cream-dim);font-size:.9rem}
+.fineprint{margin-top:14px;font-size:12px;line-height:1.55;color:var(--cream-dim);opacity:.8}
+
+/* ---------- botões ---------- */
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font:600 13px/1 var(--body);letter-spacing:.03em;text-decoration:none;
+  padding:15px 20px;border-radius:999px;border:1px solid var(--ink-3);
+  color:var(--cream);background:var(--ink-2);
+  transition:border-color .25s ease,background .25s ease;
+}
+.btn:hover{border-color:rgba(214,169,74,.5)}
+.btn--gold{background:var(--gold);color:#171103;border-color:var(--gold)}
+.btn--gold:hover{background:var(--gold-soft);border-color:var(--gold-soft)}
+.btn svg{width:16px;height:16px;flex:0 0 auto}
+
+/* ---------- fecho ---------- */
+/* sem margin-top: uma fresta entre as seções deixaria o vídeo aparecer */
+.close{position:relative;overflow:hidden;padding-block:98px 90px}
+.close__bg{position:absolute;inset:0}
+/* o zoom lento só roda com o fecho na tela: fora dela seria animação
+   infinita atrás de uma página opaca, gastando bateria à toa */
+.close__bg img{width:100%;height:100%;object-fit:cover;
+  animation:kenburns 26s ease-in-out infinite alternate;animation-play-state:paused}
+.close.lit .close__bg img{animation-play-state:running}
+@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
+.close__bg::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,var(--ink) 0%,rgba(0,0,0,.82) 40%,rgba(0,0,0,.95) 100%)}
+.close .wrap{position:relative}
+.close h2{font-size:clamp(2rem,9vw,2.8rem)}
+
+footer{border-top:1px solid var(--ink-3);padding-block:30px 108px;font-size:13px;color:var(--cream-dim)}
+footer .wrap{display:grid;gap:7px}
+footer a{color:var(--cream-dim)}
+footer .f-mark{font-family:var(--display);font-size:1.25rem;color:var(--cream);margin-bottom:5px}
+footer .f-note{margin-top:12px;font-size:11.5px;line-height:1.5;opacity:.65}
+
+/* ---------- CTA fixo ---------- */
+.dock{
+  position:fixed;inset:auto 0 0;z-index:45;
+  padding:10px var(--gut-r) calc(env(safe-area-inset-bottom,0px) + 10px) var(--gut);
+  background:linear-gradient(to top,rgba(0,0,0,.97) 55%,rgba(0,0,0,0));
+  transform:translateY(130%);transition:transform .45s cubic-bezier(.2,.7,.3,1);
+  pointer-events:none;
+}
+.dock.on{transform:none;pointer-events:auto}
+.dock a{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:var(--gold);color:#171103;text-decoration:none;
+  font:600 14px/1 var(--body);padding:16px;border-radius:999px}
+.dock a svg{width:17px;height:17px}
+
+/* ---------- revelação no scroll ----------
+   Cada peça entra quando entra na tela: texto sobe, foto abre de baixo e
+   assenta de um leve zoom, e a régua do capítulo se desenha. */
+/* texto e blocos: sobem entrando */
+.r.pre{opacity:0;transform:translateY(34px)}
+.r.in{opacity:1;transform:none;
+  transition:opacity .75s cubic-bezier(.2,.7,.3,1),transform .85s cubic-bezier(.2,.7,.3,1)}
+
+/* Fotos sangradas e o filme: abrem por recorte, de baixo para cima, e a
+   imagem assenta de um leve zoom. O recorte vai SEMPRE no filho: clip-path
+   no próprio elemento observado zera o intersectionRatio e o
+   IntersectionObserver nunca dispara — a foto ficaria invisível para sempre. */
+.plate.r.pre,.filme.r.pre{opacity:1;transform:none}
+.plate.r.pre img,.filme.r.pre video{clip-path:inset(100% 0 0 0);transform:scale(1.14)}
+.plate.r.in img,.filme.r.in video{clip-path:inset(0 0 0 0);transform:scale(1);
+  transition:clip-path 1s cubic-bezier(.2,.7,.3,1),transform 1.6s cubic-bezier(.2,.7,.3,1)}
+.plate.r.pre::after,.plate.r.pre figcaption,.filme.r.pre .filme__btn{opacity:0}
+.plate.r.in::after,.plate.r.in figcaption,.filme.r.in .filme__btn{opacity:1;transition:opacity .9s ease .25s}
+
+/* a foto do card de área abre junto com o card */
+.area.pre .area__img{clip-path:inset(100% 0 0 0)}
+.area.in .area__img{clip-path:inset(0 0 0 0);transition:clip-path .9s cubic-bezier(.2,.7,.3,1) .06s}
+.area.pre .area__img img{transform:scale(1.12)}
+.area.in .area__img img{transform:scale(1);transition:transform 1.4s cubic-bezier(.2,.7,.3,1)}
+
+/* Título que revela palavra a palavra: cada palavra sobe de dentro de uma
+   janela. A janela ganha um respiro embaixo (e desconta na margem) para o
+   itálico da Fraunces não ter o rabo cortado. Quem recorta é o setLang(),
+   porque ele reescreve o textContent e apagaria estes spans. */
+.w{display:inline-block;overflow:hidden;padding-bottom:.14em;margin-bottom:-.14em;vertical-align:bottom}
+.w > span{display:inline-block;transform:translateY(110%);
+  transition:transform .85s cubic-bezier(.2,.7,.3,1)}
+.in .w > span,.r.in .w > span{transform:none}
+/* com palavras animando, o bloco inteiro não sobe junto — seria movimento duplo */
+.r.pre[data-split]{opacity:1;transform:none}
+
+/* a régua do capítulo se desenha */
+.chap__no i{transform-origin:left}
+.chap__no.pre i{transform:scaleX(0)}
+.chap__no.in i{transform:scaleX(1);transition:transform .9s cubic-bezier(.2,.7,.3,1) .12s}
+
+/* Grão sobre tudo: o preto chapado vira preto de papel. É um SVG inline,
+   não baixa nada da rede, não pega clique e fica abaixo da barra e do dock. */
+body::after{content:"";position:fixed;inset:0;z-index:35;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+@media (prefers-reduced-motion:reduce){
+  .r.pre{opacity:1;transform:none}
+  .r.in{transition:none}
+  .hero__media,.hero__cue,.sound{animation:none}
+  .hero__media{transform:none}
+  .hero__cue svg{animation:none}
+  .close__bg img{animation:none}
+  .par{transform:none!important}
+  .w > span{transform:none;transition:none}
+  #progress{transition:none}
+  .topbar{transition:none;transform:none}
+  .area.pre .area__img{clip-path:none}
+  .plate.r.pre img,.filme.r.pre video{clip-path:none}
+  .plate.r.pre img,.filme.r.pre video,.area.pre .area__img img{transform:none}
+  .plate.r.in img,.filme.r.in video,.area.in .area__img img{transition:none}
+  .plate.r.pre::after,.plate.r.pre figcaption,.filme.r.pre .filme__btn{opacity:1}
+  .chap__no.pre i{transform:none}
+  .hero__cue{animation:none}
+  .dock{transition:none}
+  .gal__trilha{scroll-behavior:auto}
+}
+@media (min-width:600px){
+  .areas{grid-template-columns:1fr 1fr}
+  .casas{grid-template-columns:1fr 1fr}
+  .chap{padding-block:84px}
+}
+</style>
+
+<div id="progress"></div>
+
+<div class="topbar" id="topbar">
+  <a class="topbar__mark" href="#top">Rios &amp; Muller</a>
+  <div class="lang" role="group" aria-label="Idioma">
+    <button type="button" id="btn-pt" aria-pressed="true">PT</button>
+    <button type="button" id="btn-es" aria-pressed="false">ES</button>
+  </div>
+</div>
+
+<header class="hero" id="top">
+  <div class="hero__media">
+    <video id="hv" autoplay muted loop playsinline preload="metadata" poster="img/chris-poster.webp">
+      <source src="video/chris.mp4" type="video/mp4">
+    </video>
+    <!-- dentro do media para encolher e arredondar junto com o vídeo -->
+    <div class="hero__veil"></div>
+  </div>
+  <button class="sound" id="snd" type="button" aria-label="Ativar som" data-es-aria="Activar sonido">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H2v6h4l5 4z"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>
+    </svg>
+  </button>
+  <a class="hero__cue" href="#c01" aria-label="Role para conhecer" data-es-aria="Deslizá para conocer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 4v15"/><path d="m5.5 13 6.5 6.5 6.5-6.5"/>
+    </svg>
+  </a>
+  <div class="hero__dim"></div>
+</header>
+
+<!-- 01 ESSÊNCIA -->
+<section class="chap" id="c01">
+  <div class="wrap">
+    <div class="chap__no r"><b>01</b><i></i><s data-es="La oportunidad">A oportunidade</s></div>
+    <h2 class="r" data-split><span data-es="Casas y lotes">Casas e lotes</span> <em data-es="dentro del AguaVista">dentro do AguaVista</em></h2>
+    <p class="lead r" data-es="Trabajamos con la venta de casas y lotes dentro del AguaVista: condominio residencial y club de campo privado en San Juan del Paraná, Itapúa, a 15 km de Encarnación.">Trabalhamos com a venda de casas e lotes dentro do AguaVista: condomínio residencial e clube de campo privado em San Juan del Paraná, Itapúa, a 15 km de Encarnación.</p>
+    <p class="lead r" data-es="Son 426 hectáreas a orillas del río Paraná, con playa privada, campo de golf de 18 hoyos, bahía náutica y aeropuerto ejecutivo propio. Un lugar para vivir todo el año, descansar los fines de semana o invertir.">São 426 hectares às margens do Rio Paraná, com praia privativa, campo de golfe de 18 buracos, bahía náutica e aeroporto executivo próprio. Um lugar para morar o ano inteiro, descansar nos fins de semana ou investir.</p>
+  </div>
+  <figure class="plate r">
+    <div class="par"><img src="img/por-do-sol.webp" alt="Pôr do sol sobre o Rio Paraná, visto do condomínio" loading="lazy"></div>
+    <figcaption data-es="426 hectáreas a orillas del Paraná">426 hectares às margens do Paraná</figcaption>
+  </figure>
+  <div class="wrap">
+    <div class="stats r">
+      <div class="stat"><b data-count="426">426</b><span data-es="hectáreas de desarrollo">hectares de desenvolvimento</span></div>
+      <div class="stat"><b data-count="1700" data-fmt="thousand">1.700</b><span data-es="metros de costanera privada">metros de orla privativa</span></div>
+      <div class="stat"><b data-count="15">15</b><span data-es="km hasta Encarnación">km até Encarnación</span></div>
+      <div class="stat"><b data-count="24" data-suffix=" h">24 h</b><span data-es="seguridad monitoreada">segurança monitorada</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 LOCALIZAÇÃO -->
+<section class="chap" id="c02">
+  <div class="wrap">
+    <div class="chap__no r"><b>02</b><i></i><s data-es="Ubicación">Localização</s></div>
+    <h2 class="r" data-split><span data-es="Un punto estratégico">Um ponto estratégico</span> <em data-es="frente al río">de frente para o rio</em></h2>
+    <p class="lead r" data-es="San Juan del Paraná es un distrito de Itapúa, al oeste de Encarnación. Baja densidad, paisaje ribereño y conexión directa con el eje Encarnación - Posadas.">San Juan del Paraná é um distrito de Itapúa, a oeste de Encarnación. Baixa densidade, paisagem ribeirinha e ligação direta com o eixo Encarnación - Posadas.</p>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/aerea-condominio.webp" alt="Vista aérea do condomínio AguaVista e do Rio Paraná" loading="lazy"></div>
+    <figcaption data-es="San Juan del Paraná · Itapúa · Paraguay">San Juan del Paraná · Itapúa · Paraguai</figcaption>
+  </figure>
+  <div class="wrap">
+    <div class="btns r">
+      <a class="btn" href="https://maps.app.goo.gl/deVNKMPFYnGS3Kyi7" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span data-es="Abrir en Google Maps">Abrir no Google Maps</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- 03 O CONDOMÍNIO -->
+<section class="chap" id="c03">
+  <div class="wrap">
+    <div class="chap__no r"><b>03</b><i></i><s data-es="El condominio">O condomínio</s></div>
+    <img class="chap__logo r" src="img/logo.webp" alt="AguaVista" loading="lazy">
+    <h2 class="r" data-split><span data-es="Todo pasa">Tudo acontece</span> <em data-es="adentro">dentro da porteira</em></h2>
+    <p class="lead r" data-es="Doce áreas que funcionan todo el año, del golf al spa, del río a la gastronomía.">Doze áreas que funcionam o ano inteiro, do golfe ao spa, do rio à gastronomia.</p>
+  </div>
+  <figure class="plate r">
+    <div class="par"><img src="img/am-hero-golf.webp" alt="Campo de golfe do AguaVista" loading="lazy"></div>
+    <figcaption data-es="Campo de golf de 18 hoyos">Campo de golfe de 18 buracos</figcaption>
+  </figure>
+  <div class="wrap">
+    <div class="areas">
+
+      <article class="area r" data-gal="golfe">
+        <div class="area__img"><img src="img/am-golf.webp" alt="Campo de golfe e Green Bar" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Golf &amp; Green Bar">Golfe &amp; Green Bar</h3>
+          <p data-es="Campo de 18 hoyos con driving range y torneos durante todo el año. El Green Bar acompaña con gastronomía y vista a la cancha.">Campo de 18 buracos com driving range e torneios o ano inteiro. O Green Bar acompanha com gastronomia e vista para o campo.</p>
+          <ul class="tags"><li data-es="18 hoyos">18 buracos</li><li>Driving Range</li><li>Golfshop</li><li data-es="Torneos">Torneios</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="nautica">
+        <div class="area__img"><img src="img/am-nautica.webp" alt="Bahía Náutica, marina e píer" loading="lazy"></div>
+        <div class="area__body">
+          <h3>Bahía Náutica</h3>
+          <p data-es="Marina, muelle, guardería de embarcaciones y surtidor. El Paraná como parte de la rutina.">Marina, píer, garagem náutica e posto de combustível. O Paraná como parte da rotina.</p>
+          <ul class="tags"><li>Marina</li><li data-es="Muelle">Píer</li><li data-es="Guardería">Garagem náutica</li><li data-es="Surtidor">Combustível</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="praia">
+        <div class="area__img"><img src="img/am-playa.webp" alt="Praia privada e orla" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Playa privada &amp; Quinchos">Praia privada &amp; Quinchos</h3>
+          <p data-es="1.700 metros de costanera con arena, quinchos y bar de playa para caminar, pedalear o ver el atardecer.">1.700 metros de orla com areia, quinchos e bar de praia para caminhar, pedalar ou ver o pôr do sol.</p>
+          <ul class="tags"><li data-es="Arena">Areia</li><li>Quinchos</li><li data-es="Bar de playa">Bar de praia</li><li data-es="Costanera">Orla</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="tenis">
+        <div class="area__img"><img src="img/am-house-tenis.webp" alt="House del Tenis" loading="lazy"></div>
+        <div class="area__body">
+          <h3>House del Tenis</h3>
+          <p data-es="Tenis, pádel, restaurante y piscina en un mismo punto de encuentro para la familia.">Tênis, pádel, restaurante e piscina num mesmo ponto de encontro da família.</p>
+          <ul class="tags"><li data-es="Tenis">Tênis</li><li>Pádel</li><li data-es="Restaurante">Restaurante</li><li data-es="Piscina">Piscina</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="esportes">
+        <div class="area__img"><img src="img/am-padel.webp" alt="Quadras e esportes" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Deportes">Esportes</h3>
+          <p data-es="Canchas de fútbol, espacio multiuso, gimnasio y circuito de mountain bike dentro del condominio.">Campos de futebol, espaço multiuso, academia e circuito de mountain bike dentro do condomínio.</p>
+          <ul class="tags"><li data-es="Fútbol">Futebol</li><li data-es="Gimnasio">Academia</li><li>Mountain bike</li><li data-es="Multiuso">Multiuso</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="spa">
+        <div class="area__img"><img src="img/am-spa.webp" alt="Spa e salão de beleza" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Spa &amp; Salón de Belleza">Spa &amp; Salão de Beleza</h3>
+          <p data-es="Un espacio de cuidado personal con área de relax, peluquería y servicios de manicura y pedicura.">Um espaço de cuidado pessoal com área de relax, cabeleireiro e serviços de manicure e pedicure.</p>
+          <ul class="tags"><li>Spa</li><li data-es="Peluquería">Cabeleireiro</li><li data-es="Manicura">Manicure</li><li data-es="Área relax">Área relax</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="gastronomia">
+        <div class="area__img"><img src="img/am-gastronomia.webp" alt="Restaurantes e bares" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Gastronomía">Gastronomia</h3>
+          <p data-es="Altitude, House Tenis, Green Bar y Floresta: cuatro propuestas distintas para una comida o un encuentro.">Altitude, House Tenis, Green Bar e Floresta: quatro propostas diferentes para uma refeição ou um encontro.</p>
+          <ul class="tags"><li>Altitude</li><li>Floresta Bar</li><li>Green Bar</li><li>Catering</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="natureza">
+        <div class="area__img"><img src="img/naturaleza.webp" alt="Jardim Japonês e trilhas do condomínio" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Naturaleza">Natureza</h3>
+          <p data-es="Parque Tekoha, Jardín Japonés, Paseo de los Mitos, senderos y lagunas integrados al paisaje del río.">Parque Tekoha, Jardim Japonês, Paseo de los Mitos, trilhas e lagoas integrados à paisagem do rio.</p>
+          <ul class="tags"><li>Parque Tekoha</li><li data-es="Jardín Japonés">Jardim Japonês</li><li>Paseo de los Mitos</li><li data-es="Lagunas">Lagoas</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="familia">
+        <div class="area__img"><img src="img/am-familia.webp" alt="Áreas para crianças" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Familia">Família</h3>
+          <p data-es="Juegos infantiles, guardería de niños, piscina infantil y actividades familiares durante todo el año.">Playground, recreação infantil, piscina para crianças e atividades familiares o ano inteiro.</p>
+          <ul class="tags"><li data-es="Juegos">Playground</li><li data-es="Guardería">Recreação</li><li data-es="Piscina infantil">Piscina infantil</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="servicos">
+        <div class="area__img"><img src="img/am-urutau.webp" alt="Urutaú Market e serviços" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Servicios">Serviços</h3>
+          <p data-es="Urutaú Market, lavandería, enfermería y planta potabilizadora propia: lo cotidiano resuelto adentro.">Urutaú Market, lavanderia, enfermaria e estação de tratamento de água própria: o cotidiano resolvido lá dentro.</p>
+          <ul class="tags"><li>Urutaú Market</li><li data-es="Lavandería">Lavanderia</li><li data-es="Enfermería">Enfermaria</li><li data-es="Agua potable">Água tratada</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="seguranca">
+        <div class="area__img"><img src="img/g-seguranca-1.webp" alt="Central de monitoramento 24 horas" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Seguridad 24 h">Segurança 24 h</h3>
+          <p data-es="Accesos controlados y monitoreo permanente acompañan la vida cotidiana dentro del condominio.">Acessos controlados e monitoramento permanente acompanham o dia a dia dentro do condomínio.</p>
+          <ul class="tags"><li data-es="Control de acceso">Controle de acesso</li><li data-es="Monitoreo">Monitoramento</li><li>24 h</li></ul>
+        </div>
+      </article>
+
+      <article class="area r" data-gal="eventos">
+        <div class="area__img"><img src="img/am-eventos.webp" alt="Salão de eventos" loading="lazy"></div>
+        <div class="area__body">
+          <h3 data-es="Eventos">Eventos</h3>
+          <p data-es="Salón, patio y capilla para casamientos, cumpleaños y encuentros corporativos, con catering propio.">Salão, pátio e capela para casamentos, aniversários e encontros corporativos, com catering próprio.</p>
+          <ul class="tags"><li data-es="Salón de Eventos">Salão de Eventos</li><li data-es="Capilla">Capela</li><li>Catering</li><li data-es="Corporativo">Corporativo</li></ul>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- 04 AEROPORTO AVA -->
+<section class="chap" id="c04">
+  <div class="wrap">
+    <div class="chap__no r"><b>04</b><i></i><s data-es="Aeropuerto AVA">Aeroporto AVA</s></div>
+    <h2 class="r" data-split><span data-es="Una nueva forma">Uma nova forma</span> <em data-es="de llegar">de chegar</em></h2>
+    <p class="lead r" data-es="AVA AguaVista Airport Executive es el aeropuerto privado del condominio: pista asfaltada, hangar y terminal propia, dentro del mismo condominio.">O AVA AguaVista Airport Executive é o aeroporto privado do condomínio: pista asfaltada, hangar e terminal própria, dentro da porteira.</p>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/ava-pista.webp" alt="Pista asfaltada do aeroporto AVA" loading="lazy"></div>
+    <figcaption data-es="Pista asfaltada de 1.300 × 20 metros">Pista asfaltada de 1.300 × 20 metros</figcaption>
+  </figure>
+  <div class="wrap">
+    <div class="specs r">
+      <div class="spec"><b>1.300 × 20 m</b><span data-es="Pista asfaltada, preparada para conectividad privada.">Pista asfaltada, preparada para conectividade privada.</span></div>
+      <div class="spec"><b data-es="Hangar">Hangar</b><span data-es="Plataforma y espacios para aeronaves y operación en tierra.">Pátio e espaços para aeronaves e operação em solo.</span></div>
+      <div class="spec"><b>Jet fuel</b><span data-es="Suministro de combustible coordinado para operaciones aéreas.">Abastecimento de combustível coordenado para operações aéreas.</span></div>
+      <div class="spec"><b>24/7</b><span data-es="Control permanente dentro del entorno AguaVista.">Controle permanente dentro do perímetro do AguaVista.</span></div>
+      <div class="spec"><b>Coworking</b><span data-es="Sala de reuniones para encuentros y presentaciones corporativas.">Sala de reuniões para encontros e apresentações corporativas.</span></div>
+      <div class="spec"><b data-es="Auditorio">Auditório</b><span data-es="Espacio equipado para conferencias, lanzamientos y capacitaciones.">Espaço equipado para conferências, lançamentos e treinamentos.</span></div>
+    </div>
+  </div>
+  <div class="filme r" id="filme-ava">
+    <video id="vava" playsinline preload="none" poster="img/ava-poster.webp">
+      <source src="video/ava.mp4" type="video/mp4">
+    </video>
+    <button class="filme__btn" id="vava-btn" type="button">
+      <i></i>
+      <span data-es="Ver el aeropuerto AVA desde el aire">Ver o aeroporto AVA do alto</span>
+    </button>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/ava-coworking.webp" alt="Lounge e coworking do aeroporto AVA" loading="lazy"></div>
+    <figcaption data-es="Lounge, coworking y auditorio en la terminal">Lounge, coworking e auditório na terminal</figcaption>
+  </figure>
+</section>
+
+<!-- 05 CASAS DISPONÍVEIS -->
+<section class="chap" id="c05">
+  <div class="wrap">
+    <div class="chap__no r"><b>05</b><i></i><s data-es="Casas disponibles">Casas disponíveis</s></div>
+    <h2 class="r" data-split><span data-es="Entrá a las casas">Entre nas casas</span> <em data-es="antes de viajar">antes de viajar</em></h2>
+    <p class="lead r" data-es="Recorridos completos grabados adentro del condominio. Tocá para ver el video en YouTube.">Tours completos gravados dentro do condomínio. Toque para ver o vídeo no YouTube.</p>
+    <div class="casas" id="casas"></div>
+  </div>
+</section>
+
+<!-- 06 LOTES -->
+<section class="chap" id="c06">
+  <div class="wrap">
+    <div class="chap__no r"><b>06</b><i></i><s data-es="Lotes e inversión">Lotes e investimento</s></div>
+    <h2 class="r" data-split><span data-es="Tu lote,">Seu lote,</span> <em data-es="a tu tiempo">no seu tempo</em></h2>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/lotes-aerea.webp" alt="Vista aérea dos lotes do condomínio" loading="lazy"></div>
+    <figcaption data-es="Lotes desde 800 m²">Lotes a partir de 800 m²</figcaption>
+  </figure>
+  <div class="wrap">
+    <p class="lead r" data-es="Lotes con financiación propia del desarrollo, sin banco. Podés comprar y conservarlo sin obligación de construir; cuando decidas empezar la obra, tenés hasta 2 años para completarla.">Lotes com financiamento próprio do empreendimento, sem banco. Você pode comprar e manter sem obrigação de construir; quando decidir iniciar a obra, tem até 2 anos para concluir.</p>
+    <div class="stats r">
+      <div class="stat"><b data-count="800">800</b><span data-es="m² de superficie mínima">m² de área mínima</span></div>
+      <div class="stat"><b data-count="5" data-suffix="%">5%</b><span data-es="de entrega inicial">de entrada</span></div>
+      <div class="stat"><b data-count="84" data-prefix="até ">até 84</b><span data-es="cuotas con financiación propia">parcelas com financiamento próprio</span></div>
+      <div class="stat"><b data-count="2">2</b><span data-es="años de plazo de obra">anos de prazo para a obra</span></div>
+    </div>
+    <div class="steps r">
+      <div class="step"><b>01</b><div><h3 data-es="Elegí tu lote">Escolha o lote</h3><p data-es="Seleccioná la ubicación ideal dentro del condominio.">Escolha a localização ideal dentro do condomínio.</p></div></div>
+      <div class="step"><b>02</b><div><h3 data-es="Definí tu plan">Defina o plano</h3><p data-es="Consultá condiciones y alternativas de financiación.">Veja as condições e as alternativas de financiamento.</p></div></div>
+      <div class="step"><b>03</b><div><h3 data-es="Empezá tu futuro">Comece</h3><p data-es="Proyectá tu lugar con respaldo y acompañamiento comercial.">Projete seu lugar com respaldo e acompanhamento comercial.</p></div></div>
+    </div>
+    <p class="fineprint r" data-es="Condiciones sujetas a evaluación, disponibilidad y aprobación comercial. Valores y plazos se confirman con el equipo comercial.">Condições sujeitas a análise, disponibilidade e aprovação comercial. Valores e prazos são confirmados com a equipe comercial.</p>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/master-plan.webp" alt="Master Plan do condomínio AguaVista" loading="lazy"></div>
+    <figcaption>Master Plan</figcaption>
+  </figure>
+</section>
+
+<!-- 07 COMUNIDADE -->
+<section class="chap" id="c07">
+  <div class="wrap">
+    <div class="chap__no r"><b>07</b><i></i><s data-es="Comunidad">Comunidade</s></div>
+    <h2 class="r" data-split><span data-es="Un lugar">Um lugar</span> <em data-es="donde la gente se encuentra">onde as pessoas se encontram</em></h2>
+    <p class="lead r" data-es="Torneos, Noche Blanca, Del Río Session, Pascuas, Navidad: un calendario social que sostiene la vida en comunidad durante todo el año.">Torneios, Noche Blanca, Del Río Session, Páscoa, Natal: um calendário social que sustenta a vida em comunidade o ano inteiro.</p>
+  </div>
+  <figure class="plate wide r">
+    <div class="par"><img src="img/comunidad.webp" alt="Moradores reunidos à beira do rio" loading="lazy"></div>
+    <figcaption data-es="Calendario social durante todo el año">Calendário social o ano inteiro</figcaption>
+  </figure>
+</section>
+
+<!-- 08 CONTATO -->
+<section class="close" id="c08">
+  <div class="close__bg"><div class="par"><img src="img/rio-aerea.webp" alt="" loading="lazy"></div></div>
+  <div class="wrap">
+    <div class="chap__no r"><b>08</b><i></i><s data-es="Hablemos">Vamos conversar</s></div>
+    <h2 class="r" data-split><span data-es="Vení a">Venha</span> <em data-es="conocerlo">conhecer</em></h2>
+    <p class="lead r" data-es="Agendamos tu visita al condominio y te mostramos las casas y los lotes disponibles, con valores y condiciones actualizados. Escribinos por WhatsApp.">A gente agenda sua visita ao condomínio e mostra as casas e os lotes disponíveis, com valores e condições atualizados. Fale com a gente no WhatsApp.</p>
+    <div class="btns r">
+      <a class="btn btn--gold" id="cta-main" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07s.89 2.4 1.01 2.56c.12.17 1.74 2.66 4.22 3.73.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29z"/></svg>
+        <span data-es="Hablar por WhatsApp">Falar no WhatsApp</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-mark">Rios &amp; Muller</div>
+    <div data-es="Casas y lotes en AguaVista.">Casas e lotes no AguaVista.</div>
+    <div>San Juan del Paraná, Itapúa, Paraguai</div>
+    <div><a id="foot-wa" href="#" target="_blank" rel="noopener"></a></div>
+    <p class="f-note" data-es="Material de presentación. Fotos e información del desarrollo AguaVista. Disponibilidad, valores y condiciones se confirman directamente con nosotros.">Material de apresentação. Fotos e informações do empreendimento AguaVista. Disponibilidade, valores e condições são confirmados direto com a gente.</p>
+  </div>
+</footer>
+
+<div class="dock" id="dock">
+  <a id="cta-dock" href="#" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07s.89 2.4 1.01 2.56c.12.17 1.74 2.66 4.22 3.73.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29z"/></svg>
+    <span data-es="Hablar por WhatsApp">Falar no WhatsApp</span>
+  </a>
+</div>
+
+<script>
+/* ===========================================================
+   1) AJUSTES RÁPIDOS — mude só estas duas coisas
+   =========================================================== */
+
+/* Número do WhatsApp que recebe os leads (só dígitos, com DDI). */
+var WHATSAPP = "595975120626";
+
+/* Mensagem que já vem escrita quando a pessoa abre a conversa. */
+var MSG = {
+  pt: "Olá! Vi a apresentação do AguaVista e quero falar sobre as casas e lotes à venda.",
+  es: "¡Hola! Vi la presentación de AguaVista y quiero hablar sobre las casas y lotes en venta."
+};
+
+/* Os vídeos das casas no YouTube.
+   id     — o pedaço da URL: youtube.com/watch?v=ESTE_PEDACO  ou  youtu.be/ESTE_PEDACO
+   thumb  — nome do arquivo em img/ (a capa do vídeo, já convertida para webp)
+   dur    — duração, só para o selinho no canto da capa
+   *_es   — a mesma linha em espanhol; sem ela, o espanhol repete o português */
+var CASAS = [
+  {
+    id: "_TBpjO4uY0Y",
+    thumb: "casa-concreto.webp",
+    dur: "9:34",
+    titulo: "Casa em concreto aparente",
+    titulo_es: "Casa en hormigón visto",
+    specs: "Lote 800 m² · 300 m² construídos · 150 m² semicobertos",
+    specs_es: "Lote 800 m² · 300 m² construidos · 150 m² semicubiertos"
+  },
+  {
+    id: "UpVAwELdROg",
+    thumb: "casa-automatizada.webp",
+    dur: "19:58",
+    titulo: "Casa automatizada com piscina",
+    titulo_es: "Casa automatizada con piscina",
+    specs: "Terreno 1.000 m² · 459 m² construídos · 333 m² cobertos",
+    specs_es: "Terreno 1.000 m² · 459 m² construidos · 333 m² cubiertos"
+  }
+];
+
+/* =========================================================== */
+
+(function(){
+  "use strict";
+  var root = document.documentElement;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* O som do vídeo de abertura. `querSom` é o que a pessoa quer ouvir: começa
+     em "sim", e só o botão de som muda para não. `somOk` é o que o navegador
+     já deixou acontecer — sem ele, voltar ao topo ficaria tentando ligar um
+     áudio que o navegador recusa, e o ícone piscaria a cada subida. */
+  var querSom = true;
+  var somOk = false;
+
+  /* ---------- idioma ---------- */
+  function waLink(lang){
+    return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(MSG[lang] || MSG.pt);
+  }
+  /* +595975120626 -> "+595 975 120626" */
+  function waDisplay(){
+    return "+" + WHATSAPP.replace(/^(\d{3})(\d{3})(\d+)$/, "$1 $2 $3");
+  }
+
+  /* Recorte em palavras dos títulos. Mora aqui, colado no setLang, porque o
+     setLang reescreve textContent e apagaria estes spans: todo recorte tem
+     que acontecer DEPOIS de o texto ser escrito, em qualquer idioma. */
+  function splitWords(el, start){
+    var txt = el.textContent;
+    if (!txt) return start;
+    var words = txt.split(/\s+/);
+    var out = [];
+    for (var i = 0; i < words.length; i++) if (words[i]) out.push(words[i]);
+    if (!out.length) return start;
+    el.textContent = "";
+    for (var j = 0; j < out.length; j++){
+      var box = document.createElement("span");
+      box.className = "w";
+      var inner = document.createElement("span");
+      inner.textContent = out[j];
+      inner.style.transitionDelay = ((start + j) * 55) + "ms";
+      box.appendChild(inner);
+      el.appendChild(box);
+      if (j < out.length - 1) el.appendChild(document.createTextNode(" "));
+    }
+    return start + out.length;
+  }
+  function splitAll(){
+    var hs = document.querySelectorAll("[data-split]");
+    for (var i = 0; i < hs.length; i++){
+      var kids = hs[i].children, n = 0;
+      for (var j = 0; j < kids.length; j++) n = splitWords(kids[j], n);
+    }
+  }
+
+  function setLang(lang){
+    var nodes = document.querySelectorAll("[data-es]");
+    for (var i = 0; i < nodes.length; i++){
+      var el = nodes[i];
+      if (el.dataset.pt === undefined) el.dataset.pt = el.textContent;
+      el.textContent = (lang === "es") ? el.dataset.es : el.dataset.pt;
+    }
+    var aria = document.querySelectorAll("[data-es-aria]");
+    for (var j = 0; j < aria.length; j++){
+      var a = aria[j];
+      if (a.dataset.ptAria === undefined) a.dataset.ptAria = a.getAttribute("aria-label") || "";
+      a.setAttribute("aria-label", (lang === "es") ? a.dataset.esAria : a.dataset.ptAria);
+    }
+    root.lang = (lang === "es") ? "es" : "pt-BR";
+    var href = waLink(lang);
+    ["cta-main","cta-dock","foot-wa"].forEach(function(id){
+      var n = document.getElementById(id);
+      if (n) n.href = href;
+    });
+    var foot = document.getElementById("foot-wa");
+    if (foot) foot.textContent = waDisplay();
+    document.getElementById("btn-pt").setAttribute("aria-pressed", String(lang !== "es"));
+    document.getElementById("btn-es").setAttribute("aria-pressed", String(lang === "es"));
+    if (!reduce) splitAll();
+    try { localStorage.setItem("av-lang", lang); } catch (e) {}
+  }
+
+  var saved = "pt";
+  try { saved = localStorage.getItem("av-lang") || "pt"; } catch (e) {}
+  setLang(saved);
+  document.getElementById("btn-pt").addEventListener("click", function(){ setLang("pt"); });
+  document.getElementById("btn-es").addEventListener("click", function(){ setLang("es"); });
+
+  /* ---------- casas do YouTube ---------- */
+  (function(){
+    var box = document.getElementById("casas");
+    if (!box) return;
+    if (!CASAS.length){
+      var ph = document.createElement("div");
+      ph.className = "soon r";
+      var b = document.createElement("b");
+      b.textContent = "Em breve";
+      b.setAttribute("data-es", "Muy pronto");
+      var p = document.createElement("p");
+      p.textContent = "Os tours das casas disponíveis entram aqui assim que os vídeos subirem.";
+      p.setAttribute("data-es", "Los recorridos de las casas disponibles aparecen acá en cuanto suban los videos.");
+      ph.appendChild(b); ph.appendChild(p); box.appendChild(ph);
+      setLang(root.lang === "es" ? "es" : "pt");
+      return;
+    }
+    CASAS.forEach(function(c){
+      var a = document.createElement("a");
+      a.className = "casa r";
+      a.href = "https://www.youtube.com/watch?v=" + c.id;
+      a.target = "_blank"; a.rel = "noopener";
+
+      var im = document.createElement("div");
+      im.className = "casa__img";
+      if (c.thumb){
+        var img = document.createElement("img");
+        img.src = "img/" + c.thumb;
+        img.alt = c.titulo || "";
+        img.loading = "lazy";
+        im.appendChild(img);
+      }
+      var pl = document.createElement("div");
+      pl.className = "casa__play";
+      pl.appendChild(document.createElement("i"));
+      im.appendChild(pl);
+
+      if (c.dur){
+        var du = document.createElement("span");
+        du.className = "casa__dur";
+        du.textContent = c.dur;
+        im.appendChild(du);
+      }
+
+      var bd = document.createElement("div");
+      bd.className = "casa__body";
+      var h = document.createElement("h3");
+      h.textContent = c.titulo || "";
+      if (c.titulo_es) h.setAttribute("data-es", c.titulo_es);
+      bd.appendChild(h);
+      if (c.specs){
+        var sp = document.createElement("p");
+        sp.textContent = c.specs;
+        if (c.specs_es) sp.setAttribute("data-es", c.specs_es);
+        bd.appendChild(sp);
+      }
+      a.appendChild(im); a.appendChild(bd);
+      box.appendChild(a);
+    });
+    /* os cards nasceram depois da primeira troca de idioma */
+    setLang(root.lang === "es" ? "es" : "pt");
+  })();
+
+
+  /* ---------- galeria das áreas ---------- */
+  /* As fotos de cada uma das 12 áreas. A primeira é a que já aparece no card.
+     Para somar uma foto: põe o arquivo em img/ e acrescenta uma linha
+     {f:"arquivo.webp", pt:"legenda", es:"leyenda"}. Nada mais muda — o
+     contador do selinho e as bolinhas saem do tamanho desta lista.
+     Quatro áreas estão curtas porque o acervo não tem mais foto delas. */
+  var GALERIAS = {
+    golfe: {pt:"Golfe & Green Bar", es:"Golf & Green Bar", fotos:[
+      {f:"am-golf.webp",      pt:"Campo de golfe e Green Bar",            es:"Campo de golf y Green Bar"},
+      {f:"g-golfe-1.webp",    pt:"No campo, com o Paraná ao fundo",       es:"En la cancha, con el Paraná de fondo"},
+      {f:"g-golfe-2.webp",    pt:"A tacada, no driving range",            es:"El golpe, en el driving range"},
+      {f:"g-golfe-3.webp",    pt:"Os 18 buracos vistos do alto",          es:"Los 18 hoyos vistos desde el aire"}]},
+    nautica: {pt:"Bahía Náutica", es:"Bahía Náutica", fotos:[
+      {f:"am-nautica.webp",   pt:"Bahía Náutica",                         es:"Bahía Náutica"},
+      {f:"g-nautica-1.webp",  pt:"A marina e o píer",                     es:"La marina y el muelle"},
+      {f:"g-nautica-2.webp",  pt:"Saída de jet ski",                      es:"Salida de jet ski"},
+      {f:"g-nautica-3.webp",  pt:"A baía vista do alto",                  es:"La bahía vista desde el aire"}]},
+    praia: {pt:"Praia privada & Quinchos", es:"Playa privada & Quinchos", fotos:[
+      {f:"am-playa.webp",     pt:"A orla e a praia privada",              es:"La costanera y la playa privada"},
+      {f:"g-praia-1.webp",    pt:"Os 1.700 metros de orla",               es:"Los 1.700 metros de costanera"},
+      {f:"g-praia-2.webp",    pt:"Guarda-sóis e posto de salva-vidas",    es:"Sombrillas y puesto de guardavidas"},
+      {f:"g-praia-3.webp",    pt:"Quincho de madeira à beira do rio",     es:"Quincho de madera a la orilla del río"}]},
+    tenis: {pt:"House del Tenis", es:"House del Tenis", fotos:[
+      {f:"am-house-tenis.webp", pt:"O salão do House del Tenis",          es:"El salón del House del Tenis"},
+      {f:"g-tenis-1.webp",    pt:"Quadra de tênis em dia de jogo",        es:"Cancha de tenis en día de partido"}]},
+    esportes: {pt:"Esportes", es:"Deportes", fotos:[
+      {f:"am-padel.webp",     pt:"Quadras de pádel",                      es:"Canchas de pádel"},
+      {f:"g-esportes-1.webp", pt:"Futebol no campo do condomínio",        es:"Fútbol en la cancha del condominio"},
+      {f:"g-esportes-2.webp", pt:"Academia equipada",                     es:"Gimnasio equipado"},
+      {f:"g-esportes-3.webp", pt:"Circuito de bicicleta pelo condomínio", es:"Circuito de bicicleta por el condominio"}]},
+    spa: {pt:"Spa & Salão de Beleza", es:"Spa & Salón de Belleza", fotos:[
+      {f:"am-spa.webp",       pt:"Spa e salão de beleza",                 es:"Spa y salón de belleza"},
+      {f:"g-spa-1.webp",      pt:"Sauna",                                 es:"Sauna"},
+      {f:"g-spa-2.webp",      pt:"Sala de massagem",                      es:"Sala de masajes"}]},
+    gastronomia: {pt:"Gastronomia", es:"Gastronomía", fotos:[
+      {f:"am-gastronomia.webp",    pt:"Restaurantes e bares",             es:"Restaurantes y bares"},
+      {f:"g-gastronomia-1.webp",   pt:"Jantar junto à lareira",           es:"Cena junto a la chimenea"},
+      {f:"g-gastronomia-2.webp",   pt:"O balcão do bar",                  es:"La barra del bar"},
+      {f:"g-gastronomia-3.webp",   pt:"Bar de teto de palha, aberto para o verde", es:"Bar de techo de paja, abierto al verde"}]},
+    /* A capa do card (naturaleza.webp) é uma colagem de três painéis: em
+       tela cheia aparecem as tiras cortadas de baixo. Por isso ela fica de
+       fora daqui — a galeria abre direto na ponte do Jardim Japonês. */
+    natureza: {pt:"Natureza", es:"Naturaleza", fotos:[
+      {f:"g-natureza-1.webp", pt:"A ponte vermelha do Jardim Japonês",    es:"El puente rojo del Jardín Japonés"},
+      {f:"g-natureza-2.webp", pt:"Paseo de los Mitos",                    es:"Paseo de los Mitos"},
+      {f:"g-natureza-3.webp", pt:"Macaco na mata do condomínio",          es:"Mono en el monte del condominio"},
+      {f:"g-natureza-4.webp", pt:"Deck sobre a lagoa",                    es:"Deck sobre la laguna"}]},
+    familia: {pt:"Família", es:"Familia", fotos:[
+      {f:"am-familia.webp",   pt:"Áreas para as crianças",                es:"Áreas para los chicos"},
+      {f:"g-familia-1.webp",  pt:"Oficina de desenho na recreação",       es:"Taller de dibujo en la recreación"},
+      {f:"g-familia-2.webp",  pt:"Playground coberto, para qualquer tempo", es:"Juegos techados, para cualquier clima"},
+      {f:"g-familia-3.webp",  pt:"Fim de tarde na praia, em família",     es:"Atardecer en la playa, en familia"}]},
+    servicos: {pt:"Serviços", es:"Servicios", fotos:[
+      {f:"am-urutau.webp",    pt:"Urutaú Market e serviços",              es:"Urutaú Market y servicios"},
+      {f:"g-servicos-1.webp", pt:"Dentro do Urutaú Market",               es:"Dentro del Urutaú Market"},
+      {f:"g-servicos-2.webp", pt:"Lavanderia",                            es:"Lavandería"},
+      {f:"g-servicos-3.webp", pt:"A estação de tratamento de água",       es:"La planta potabilizadora"}]},
+    /* Só uma foto: o acervo não tem imagem da portaria. Com menos de duas
+       o card não ganha botão nem selinho — é o mesmo guarda-chuva que
+       cobre qualquer área que venha a ficar curta. */
+    seguranca: {pt:"Segurança 24 h", es:"Seguridad 24 h", fotos:[
+      {f:"g-seguranca-1.webp",pt:"Central de monitoramento, 24 horas",    es:"Central de monitoreo, 24 horas"}]},
+    eventos: {pt:"Eventos", es:"Eventos", fotos:[
+      {f:"am-eventos.webp",   pt:"Salão de eventos",                      es:"Salón de eventos"},
+      {f:"g-eventos-1.webp",  pt:"Salão montado para a festa",            es:"Salón montado para la fiesta"},
+      {f:"g-eventos-2.webp",  pt:"Auditório para encontros corporativos", es:"Auditorio para encuentros corporativos"}]}
+  };
+
+  (function(){
+    var cartoes = document.querySelectorAll("[data-gal]");
+    if (!cartoes.length) return;
+
+    var ICONE_FOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 16-5-5-5.5 5.5"/></svg>';
+    var ICONE_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+    var gal, trilha, elTit, elCont, elPontos, elLeg, btnX;
+    var fotos = [], atual = -1, voltarPara = null, pedido = false, olho = null;
+
+    function lang(){ return root.lang === "es" ? "es" : "pt"; }
+
+    /* A camada nasce na primeira abertura. Antes disso a página não paga nada
+       por ela — nem markup, nem imagem. */
+    function criar(){
+      gal = document.createElement("div");
+      gal.className = "gal";
+      gal.setAttribute("role", "dialog");
+      gal.setAttribute("aria-modal", "true");
+      gal.innerHTML =
+        '<div class="gal__top">' +
+          '<h2 class="gal__tit"></h2>' +
+          '<span class="gal__cont"></span>' +
+          '<button class="gal__x" type="button">' + ICONE_X + '</button>' +
+        '</div>' +
+        '<div class="gal__trilha" tabindex="0"></div>' +
+        '<div class="gal__pe"><div class="gal__pontos"></div><p class="gal__leg"></p></div>';
+      document.body.appendChild(gal);
+
+      trilha   = gal.querySelector(".gal__trilha");
+      elTit    = gal.querySelector(".gal__tit");
+      elCont   = gal.querySelector(".gal__cont");
+      elPontos = gal.querySelector(".gal__pontos");
+      elLeg    = gal.querySelector(".gal__leg");
+      btnX     = gal.querySelector(".gal__x");
+
+      gal.setAttribute("aria-labelledby", "gal-tit");
+      elTit.id = "gal-tit";
+
+      btnX.addEventListener("click", fechar);
+      /* tocar ao lado da foto fecha; tocar na foto, não */
+      trilha.addEventListener("click", function(e){
+        if (e.target && e.target.tagName !== "IMG") fechar();
+      });
+      /* Rede de apoio. Quem manda no contador é o IntersectionObserver de
+         `abrir()`: medido aqui, atribuir `scrollLeft` por código nem sempre
+         emite `scroll` (um slide levado direto ao fim da trilha não emitiu
+         nenhum), e as setas do teclado rolam exatamente assim. O evento
+         continua ligado porque faz o número acompanhar o dedo no meio do
+         arrasto, antes de qualquer slide cruzar o limiar. */
+      trilha.addEventListener("scroll", function(){
+        if (pedido) return;
+        pedido = true;
+        requestAnimationFrame(function(){ pedido = false; porScroll(); });
+      }, {passive:true});
+      document.addEventListener("keydown", teclado, true);
+    }
+
+    function teclado(e){
+      if (!gal || !gal.classList.contains("on")) return;
+      if (e.key === "Escape"){ e.preventDefault(); fechar(); return; }
+      if (e.key === "ArrowRight"){ e.preventDefault(); irPara(atual + 1); return; }
+      if (e.key === "ArrowLeft"){ e.preventDefault(); irPara(atual - 1); return; }
+      /* prende o foco: só o X e a trilha são alcançáveis aqui dentro */
+      if (e.key === "Tab"){
+        e.preventDefault();
+        (document.activeElement === btnX ? trilha : btnX).focus();
+      }
+    }
+
+    function irPara(i){
+      if (i < 0 || i >= fotos.length) return;
+      trilha.scrollTo({left: i * trilha.clientWidth,
+                       behavior: reduce ? "auto" : "smooth"});
+    }
+
+    function marcar(i){
+      if (!fotos.length) return;
+      if (i < 0) i = 0; else if (i >= fotos.length) i = fotos.length - 1;
+      if (i === atual) return;
+      atual = i;
+      elCont.textContent = (i + 1) + " / " + fotos.length;
+      elLeg.textContent = fotos[i][lang()] || fotos[i].pt;
+      var bolas = elPontos.children;
+      for (var k = 0; k < bolas.length; k++) bolas[k].className = (k === i ? "on" : "");
+    }
+    function porScroll(){
+      if (!fotos.length) return;
+      marcar(Math.round(trilha.scrollLeft / (trilha.clientWidth || 1)));
+    }
+
+    function abrir(chave, cartao){
+      var g = GALERIAS[chave];
+      if (!g || !g.fotos || !g.fotos.length) return;
+      if (!gal) criar();
+
+      fotos = g.fotos;
+      voltarPara = cartao;
+      atual = -1;
+      elTit.textContent = g[lang()] || g.pt;
+
+      if (olho){ olho.disconnect(); olho = null; }
+      trilha.innerHTML = "";
+      elPontos.innerHTML = "";
+      for (var i = 0; i < fotos.length; i++){
+        var sl = document.createElement("div");
+        sl.className = "gal__slide";
+        sl.setAttribute("data-i", i);
+        var im = document.createElement("img");
+        im.src = "img/" + fotos[i].f;
+        im.alt = fotos[i][lang()] || fotos[i].pt;
+        /* as duas primeiras já; o resto quando chegar perto, para não
+           baixar quatro fotos de uma vez num 4G */
+        im.loading = (i < 2) ? "eager" : "lazy";
+        im.decoding = "async";
+        sl.appendChild(im);
+        trilha.appendChild(sl);
+        elPontos.appendChild(document.createElement("i"));
+      }
+      if (fotos.length < 2) elPontos.style.display = "none";
+      else elPontos.style.display = "";
+
+      gal.classList.add("on");
+      document.body.classList.add("gal-aberta");
+      trilha.scrollLeft = 0;
+      atual = -1;
+      marcar(0);
+
+      /* Quem decide qual foto está na tela. Cada slide ocupa a trilha inteira,
+         então em repouso só um passa de 60% visível — e isso não depende de o
+         navegador emitir `scroll`, que foi justamente o que falhou. */
+      if (window.IntersectionObserver){
+        olho = new IntersectionObserver(function(entradas){
+          for (var e = 0; e < entradas.length; e++){
+            if (entradas[e].isIntersecting)
+              marcar(parseInt(entradas[e].target.getAttribute("data-i"), 10));
+          }
+        }, {root: trilha, threshold: 0.6});
+        var sls = trilha.children;
+        for (var o = 0; o < sls.length; o++) olho.observe(sls[o]);
+      }
+      btnX.focus();
+    }
+
+    function fechar(){
+      if (!gal) return;
+      gal.classList.remove("on");
+      document.body.classList.remove("gal-aberta");
+      if (olho){ olho.disconnect(); olho = null; }
+      /* solta as imagens: fechada, a galeria não segura nada na memória */
+      trilha.innerHTML = "";
+      fotos = [];
+      atual = -1;
+      if (voltarPara){ voltarPara.focus(); voltarPara = null; }
+    }
+
+    /* o botão e o selinho são postos aqui, e não no HTML, para que a
+       contagem nunca saia de sincronia com a lista de fotos */
+    for (var c = 0; c < cartoes.length; c++){
+      (function(cartao){
+        var chave = cartao.getAttribute("data-gal");
+        var g = GALERIAS[chave];
+        if (!g || !g.fotos || g.fotos.length < 2) return;
+
+        var selo = document.createElement("span");
+        selo.className = "area__n";
+        selo.innerHTML = ICONE_FOTO + "<b>" + g.fotos.length + "</b>";
+        var moldura = cartao.querySelector(".area__img");
+        if (moldura) moldura.appendChild(selo);
+
+        var b = document.createElement("button");
+        b.className = "area__btn";
+        b.type = "button";
+        b.setAttribute("aria-label", "Ver " + g.fotos.length + " fotos de " + g.pt);
+        b.setAttribute("data-es-aria", "Ver " + g.fotos.length + " fotos de " + g.es);
+        b.addEventListener("click", function(){ abrir(chave, b); });
+        cartao.appendChild(b);
+      })(cartoes[c]);
+    }
+
+    /* os botões nasceram depois da primeira troca de idioma */
+    setLang(root.lang === "es" ? "es" : "pt");
+  })();
+
+  /* ---------- som do vídeo ---------- */
+  (function(){
+    var v = document.getElementById("hv");
+    var btn = document.getElementById("snd");
+    if (!v || !btn) return;
+    var on = "M11 5 6 9H2v6h4l5 4z";
+    function icon(muted){
+      btn.innerHTML = muted
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + on + '"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + on + '"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+    }
+    function sincronizar(){
+      icon(v.muted);
+      btn.setAttribute("aria-label", v.muted
+        ? (root.lang === "es" ? "Activar sonido" : "Ativar som")
+        : (root.lang === "es" ? "Silenciar" : "Desativar som"));
+    }
+    sincronizar();
+
+    /* Tenta deixar o vídeo tocando COM som. Se o navegador recusar, volta
+       mudo na hora (melhor mudo que congelado no meio da tela) e chama
+       `seRecusar`, para quem quiser armar uma segunda tentativa. */
+    function comSom(seRecusar){
+      v.volume = 0.85;
+      v.muted = false;
+      v.play().then(function(){
+        somOk = true;
+        sincronizar();
+      }, function(){
+        v.muted = true;
+        v.play().catch(function(){});
+        sincronizar();
+        if (seRecusar) seRecusar();
+      });
+    }
+
+    btn.addEventListener("click", function(){
+      querSom = v.muted;              /* mudo agora = ele está pedindo som */
+      if (querSom) comSom(null);
+      else { v.muted = true; sincronizar(); }
+    });
+    /* o botão também segue quem mudou o som sem ser o clique — é assim que
+       ele volta a dizer "ativar som" quando a página silencia o vídeo para
+       conseguir retomá-lo */
+    v.addEventListener("volumechange", sincronizar);
+
+    /* Abrir já com som. O navegador só libera áudio depois de um gesto na
+       página, e abrir um link do WhatsApp não é gesto nenhum — no celular
+       esta primeira tentativa quase sempre é recusada. Quando for, o vídeo
+       segue mudo e o som entra no primeiro toque na tela, que na prática é
+       o próprio gesto de começar a rolar. */
+    comSom(function(){
+      var eventos = ["pointerdown", "touchstart", "keydown"];
+      function desarmar(){
+        for (var i = 0; i < eventos.length; i++)
+          document.removeEventListener(eventos[i], ligar, true);
+      }
+      function ligar(e){
+        desarmar();
+        /* toque no próprio botão de som é dele: quem decide é o clique,
+           senão a gente ligaria e o clique desligaria em seguida */
+        if (e && e.target && btn.contains(e.target)) return;
+        if (querSom) comSom(null);
+      }
+      for (var i = 0; i < eventos.length; i++)
+        document.addEventListener(eventos[i], ligar, true);
+    });
+  })();
+
+  /* ---------- filme do aeroporto (só baixa quando pedem) ---------- */
+  (function(){
+    var v = document.getElementById("vava");
+    var btn = document.getElementById("vava-btn");
+    if (!v || !btn) return;
+    btn.addEventListener("click", function(){
+      btn.hidden = true;
+      v.controls = true;
+      v.play().catch(function(){ btn.hidden = false; });
+    });
+    v.addEventListener("ended", function(){ v.controls = false; btn.hidden = false; });
+  })();
+
+  /* ---------- revelação (só o que já está abaixo da dobra) ---------- */
+  (function(){
+    var items = Array.prototype.slice.call(document.querySelectorAll(".r"));
+    if (reduce || !("IntersectionObserver" in window)){
+      items.forEach(function(el){ el.classList.add("in"); });
+      return;
+    }
+    var vh = window.innerHeight;
+    var pending = [];
+    items.forEach(function(el){
+      if (el.getBoundingClientRect().top > vh * 0.92){
+        el.classList.add("pre");
+        pending.push(el);
+      } else {
+        el.classList.add("in");
+      }
+    });
+    function reveal(el){
+      var sibs = el.parentElement ? Array.prototype.slice.call(el.parentElement.children).indexOf(el) : 0;
+      el.style.transitionDelay = Math.min(sibs, 4) * 60 + "ms";
+      el.classList.add("in");
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (!e.isIntersecting) return;
+        reveal(e.target);
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    pending.forEach(function(el){ io.observe(el); });
+
+    /* Rede de segurança: nada pode ficar invisível para sempre. Se um item já
+       entrou na tela e ainda não foi revelado, revela na varredura do scroll. */
+    var sweeping = false;
+    function sweep(){
+      sweeping = false;
+      var h = window.innerHeight;
+      for (var i = pending.length - 1; i >= 0; i--){
+        var el = pending[i];
+        if (el.classList.contains("in")){ pending.splice(i, 1); io.unobserve(el); continue; }
+        var r = el.getBoundingClientRect();
+        /* Basta o topo ter cruzado o pé da tela: ou já foi visto, ou foi
+           ultrapassado numa rolagem rápida. Exigir `r.bottom > 0` junto,
+           como estava, só resgatava o que ainda estivesse na tela naquele
+           instante — quem passasse direto ficava invisível para sempre.
+           Medido a 180 px por quadro: 23 dos 56 blocos sumiam, capítulos
+           02 e 03 inteiros entre eles. */
+        if (r.top < h){
+          reveal(el);
+          io.unobserve(el);
+          pending.splice(i, 1);
+        }
+      }
+    }
+    window.addEventListener("scroll", function(){
+      if (!sweeping){ sweeping = true; setTimeout(sweep, 250); }
+    }, { passive: true });
+  })();
+
+  /* ---------- contadores ---------- */
+  (function(){
+    var nums = document.querySelectorAll("[data-count]");
+    if (!nums.length) return;
+    if (reduce || !("IntersectionObserver" in window)) return;
+    function fmt(n, el){
+      var s = (el.dataset.fmt === "thousand")
+        ? n.toLocaleString(root.lang === "es" ? "es-PY" : "pt-BR")
+        : String(n);
+      return (el.dataset.prefix || "") + s + (el.dataset.suffix || "");
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (!e.isIntersecting) return;
+        var el = e.target;
+        io.unobserve(el);
+        var target = parseInt(el.dataset.count, 10);
+        if (isNaN(target)) return;
+        var t0 = null, dur = 900;
+        function tick(ts){
+          if (t0 === null) t0 = ts;
+          var p = Math.min((ts - t0) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = fmt(Math.round(target * eased), el);
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    }, { threshold: 0.5 });
+    for (var i = 0; i < nums.length; i++) io.observe(nums[i]);
+  })();
+
+  /* ---------- progresso, barra e dock ---------- */
+  (function(){
+    var bar = document.getElementById("progress");
+    var dock = document.getElementById("dock");
+    var top = document.getElementById("topbar");
+    var hero = document.getElementById("top");
+    var heroVid = document.getElementById("hv");
+    var close = document.getElementById("c08");
+    var pars = document.querySelectorAll(".par");
+    var finalCta = document.getElementById("cta-main");
+    var ticking = false;
+
+    /* Voltar ao topo: o vídeo volta a tocar, e com som se era assim que
+       estava. O navegador pode recusar play() com áudio quando o gesto já
+       esfriou; em vez de deixar o vídeo congelado no meio da tela, volta
+       mudo — o botão se atualiza sozinho pelo evento volumechange. */
+    function retomarHero(){
+      if (querSom && somOk && heroVid.muted){
+        heroVid.volume = 0.85;
+        heroVid.muted = false;
+      }
+      heroVid.play().catch(function(){
+        heroVid.muted = true;
+        heroVid.play().catch(function(){});
+      });
+    }
+
+    /* As fotos andam mais devagar que a página. Vai no mesmo quadro do resto
+       para não abrir um segundo laço de scroll — e as medições vêm todas
+       antes das escritas, senão cada foto forçaria um recálculo de layout. */
+    var parShift = [];
+    function parallaxMedir(vh){
+      for (var i = 0; i < pars.length; i++){
+        var host = pars[i].parentElement;
+        if (!host){ parShift[i] = null; continue; }
+        var r = host.getBoundingClientRect();
+        if (r.bottom < -140 || r.top > vh + 140){ parShift[i] = null; continue; }
+        var p = ((r.top + r.height / 2) - vh / 2) / (vh / 2 + r.height / 2);
+        if (p > 1) p = 1; else if (p < -1) p = -1;
+        parShift[i] = p * 18;
+      }
+    }
+    function parallaxEscrever(){
+      for (var i = 0; i < pars.length; i++){
+        if (parShift[i] === null || parShift[i] === undefined) continue;
+        pars[i].style.transform = "translate3d(0," + parShift[i].toFixed(1) + "px,0)";
+      }
+    }
+
+    var lastHp = -1;
+    function paint(){
+      ticking = false;
+
+      /* ---- tudo que LÊ layout vem primeiro ---- */
+      var doc = document.documentElement;
+      var vh = window.innerHeight;
+      var h = doc.scrollHeight - vh;
+      var y = window.pageYOffset || doc.scrollTop;
+      var hh = hero ? (hero.offsetHeight || 1) : 0;
+      var ctaTop = finalCta ? finalCta.getBoundingClientRect().top : Infinity;
+      if (!reduce) parallaxMedir(vh);
+
+      /* ---- e só depois o que ESCREVE ---- */
+      bar.style.width = (h > 0 ? Math.min(y / h, 1) * 100 : 0) + "%";
+
+      /* O hero fica grudado no topo e recua enquanto a página sobe por cima.
+         Depois que sai de vista é escondido e o vídeo pausa — não adianta
+         decodificar vídeo atrás de uma página opaca. */
+      if (hero){
+        if (!reduce){
+          var hp = y / hh;
+          if (hp > 1) hp = 1; else if (hp < 0) hp = 0;
+          hp = Math.round(hp * 1000) / 1000;
+          /* escrever custom property no <html> invalida o estilo da página
+             inteira: só quando o valor muda de verdade */
+          if (hp !== lastHp){ root.style.setProperty("--heroP", hp.toFixed(3)); lastHp = hp; }
+        }
+        /* esconder e pausar não é animação, é economia de bateria: vale
+           também para quem pediu menos movimento */
+        var gone = y > hh;
+        hero.classList.toggle("gone", gone);
+        if (heroVid){
+          if (gone && !heroVid.paused) heroVid.pause();
+          else if (!gone && heroVid.paused) retomarHero();
+        }
+      }
+      if (!reduce) parallaxEscrever();
+
+      var pastHero = hero ? y > hh * 0.7 : y > 500;
+      top.classList.toggle("solid", pastHero);
+      /* o fecho na tela: o botão fixo some para não duplicar o CTA, e o
+         zoom lento da foto só roda enquanto ela está sendo vista */
+      var fechoAberto = ctaTop < vh + 200;
+      if (close) close.classList.toggle("lit", fechoAberto);
+      dock.classList.toggle("on", pastHero && ctaTop >= vh - 40);
+    }
+    window.addEventListener("scroll", function(){
+      if (!ticking){ ticking = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+    paint();
+  })();
+})();
+</script>
